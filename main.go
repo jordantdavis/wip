@@ -16,6 +16,8 @@ func main() {
 	switch os.Args[1] {
 	case "submodule":
 		cmd.Submodule(os.Args[2:])
+	case "worktree":
+		cmd.Worktree(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		printUsage()
@@ -28,4 +30,5 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "commands:")
 	fmt.Fprintln(os.Stderr, "  submodule   manage git submodules")
+	fmt.Fprintln(os.Stderr, "  worktree    manage git worktrees")
 }
