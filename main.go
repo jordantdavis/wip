@@ -14,6 +14,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "init":
+		cmd.Init(os.Args[2:])
 	case "submodule":
 		cmd.Submodule(os.Args[2:])
 	case "worktree":
@@ -29,6 +31,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "usage: wip <command> [args]")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "commands:")
+	fmt.Fprintln(os.Stderr, "  init        initialize a wip project in the current directory")
 	fmt.Fprintln(os.Stderr, "  submodule   manage git submodules")
 	fmt.Fprintln(os.Stderr, "  worktree    manage git worktrees")
 }
