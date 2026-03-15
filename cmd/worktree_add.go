@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func worktreeAdd(args []string) {
@@ -32,6 +33,12 @@ func worktreeAdd(args []string) {
 
 	submodule := positional[0]
 	worktree := positional[1]
+
+	cfg, err := requireWipConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	if err := checkGitRepo(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -86,5 +93,22 @@ func worktreeAdd(args []string) {
 		}
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+
+	hooks := cfg.Submodules[submodule].OnWorktreeCreate
+	for _, hook := range hooks {
+		parts := strings.Fields(hook)
+		if len(parts) == 0 {
+			continue
+		}
+		hookCmd := exec.Command(parts[0], parts[1:]...)
+		hookCmd.Dir = absWorktreePath
+		hookCmd.Stdout = os.Stdout
+		hookCmd.Stderr = os.Stderr
+		if err := hookCmd.Run(); err != nil {
+			fmt.Fprintf(os.Stdout, "✗ %s\n", hook)
+		} else {
+			fmt.Fprintf(os.Stdout, "✓ %s\n", hook)
+		}
 	}
 }

@@ -6,20 +6,24 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 )
 
 func submoduleAdd(args []string) {
 	fs := flag.NewFlagSet("submodule add", flag.ExitOnError)
 	name := fs.String("name", "", "submodule name and checkout directory at repo root (optional)")
+	var onWorktreeCreate stringList
+	fs.Var(&onWorktreeCreate, "on-worktree-create", "command to run when a new worktree is created for this submodule (repeatable)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: wip submodule add [--name <name>] <url>")
+		fmt.Fprintln(os.Stderr, "usage: wip submodule add [--name <name>] [--on-worktree-create <cmd>] <url>")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "args:")
-		fmt.Fprintln(os.Stderr, "  url          git remote URL (https://, http://, git://, or git@)")
+		fmt.Fprintln(os.Stderr, "  url                    git remote URL (https://, http://, git://, or git@)")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "flags:")
-		fmt.Fprintln(os.Stderr, "  --name       submodule name and checkout directory at repo root (optional)")
+		fmt.Fprintln(os.Stderr, "  --name                 submodule name and checkout directory at repo root (optional)")
+		fmt.Fprintln(os.Stderr, "  --on-worktree-create   command to run when a new worktree is created (repeatable)")
 	}
 	fs.Parse(args)
 
@@ -30,6 +34,12 @@ func submoduleAdd(args []string) {
 	}
 
 	url := positional[0]
+
+	cfg, err := requireWipConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	if err := checkGitRepo(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -50,6 +60,19 @@ func submoduleAdd(args []string) {
 
 	if err := runGitSubmoduleAdd(url, *name); err != nil {
 		os.Exit(1)
+	}
+
+	if len(onWorktreeCreate) > 0 {
+		subName := *name
+		if subName == "" {
+			subName = strings.TrimSuffix(path.Base(url), ".git")
+		}
+		subCfg := cfg.Submodules[subName]
+		subCfg.OnWorktreeCreate = []string(onWorktreeCreate)
+		cfg.Submodules[subName] = subCfg
+		if err := saveWipConfig(cfg); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: failed to save .wip.yml:", err)
+		}
 	}
 }
 
