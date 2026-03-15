@@ -33,3 +33,6 @@ go.work.sum
 
 # artifacts
 wip
+
+# testing with but not using submodules
+.gitmodules
