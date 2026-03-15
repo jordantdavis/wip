@@ -105,4 +105,3 @@ func checkGitRepo() error {
 	}
 	return nil
 }
-
