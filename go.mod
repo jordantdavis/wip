@@ -1,4 +1,4 @@
-module jordandavis.dev/wip
+module github.com/jordantdavis/wip
 
 go 1.26.1
 

@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-func worktreeList(args []string) {
+func worktreeList(_ []string) {
 	if err := checkGitRepo(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

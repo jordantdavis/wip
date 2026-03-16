@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"jordandavis.dev/wip/cmd"
+	"github.com/jordantdavis/wip/cmd"
 )
 
 func main() {
@@ -20,6 +20,8 @@ func main() {
 		cmd.Submodule(os.Args[2:])
 	case "worktree":
 		cmd.Worktree(os.Args[2:])
+	case "version":
+		cmd.Version()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		printUsage()
