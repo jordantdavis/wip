@@ -19,4 +19,4 @@
 - [x] 3.3 Add archive step: `tar -czf wip-${{ github.ref_name }}-darwin-arm64.tar.gz wip-darwin-arm64`
 - [x] 3.4 Add checksum step: `sha256sum wip-*.tar.gz > checksums.txt`
 - [x] 3.5 Add publish step: `gh release create ${{ github.ref_name }} --generate-notes wip-*.tar.gz checksums.txt`
-- [ ] 3.6 Tag `v0.0.1` and push to verify the full release workflow end-to-end
+- [x] 3.6 Tag `v0.0.1` and push to verify the full release workflow end-to-end
