@@ -82,13 +82,14 @@ wip version
 Add a git submodule to the workspace.
 
 ```
-wip submodule add [--name <name>] [--on-worktree-create <cmd>] <url>
+wip submodule add [--name <name>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>
 ```
 
 | Flag | Description |
 |---|---|
 | `--name` | Submodule name and checkout directory. Defaults to the repo name from the URL. |
 | `--on-worktree-create` | Shell command to run in a new worktree after creation. Repeatable. |
+| `--on-worktree-launch` | Shell command to run when `wip worktree launch` is called for this submodule. Repeatable. |
 
 The URL must be one of: `https://`, `http://`, `git://`, or `git@<host>:<path>`.
 
@@ -103,6 +104,11 @@ wip submodule add --name api https://github.com/org/backend.git
 wip submodule add \
   --on-worktree-create "npm install" \
   --on-worktree-create "npm run build" \
+  https://github.com/org/frontend.git
+
+# Register launch hooks (run on wip worktree launch)
+wip submodule add \
+  --on-worktree-launch "npm run dev" \
   https://github.com/org/frontend.git
 ```
 
@@ -194,9 +200,27 @@ List all worktrees across all submodules.
 
 ```bash
 wip worktree list
-# backend   my-feature
-# frontend  my-feature
+# SUBMODULE  WORKTREE    BRANCH
+# backend    my-feature  my-feature
+# frontend   my-feature  my-feature
 ```
+
+---
+
+### `wip worktree launch`
+
+Run `on-worktree-launch` hooks for an existing worktree. Use this to start services or open editors associated with a worktree.
+
+```
+wip worktree launch <submodule> <worktree>
+```
+
+```bash
+wip worktree launch backend my-feature
+# ✓ npm run dev
+```
+
+If no `on-worktree-launch` hooks are configured for the submodule, the command exits with a message.
 
 ---
 
@@ -231,13 +255,21 @@ submodules:
   backend:
     on-worktree-create:
       - go mod download
+    on-worktree-launch:
+      - go run .
   frontend:
     on-worktree-create:
       - npm install
       - npm run build
+    on-worktree-launch:
+      - npm run dev
 ```
 
-`on-worktree-create` commands are executed in order inside the new worktree directory whenever `wip worktree add` runs for that submodule. Each command is reported as a success or failure:
+`on-worktree-create` commands are executed in order inside the new worktree directory whenever `wip worktree add` runs for that submodule.
+
+`on-worktree-launch` commands are executed in order inside the worktree directory whenever `wip worktree launch` runs for that submodule.
+
+Each command is reported as a success or failure:
 
 ```
 ✓ npm install
