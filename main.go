@@ -36,4 +36,5 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "  init        initialize a wip project in the current directory")
 	fmt.Fprintln(os.Stderr, "  submodule   manage git submodules")
 	fmt.Fprintln(os.Stderr, "  worktree    manage git worktrees")
+	fmt.Fprintln(os.Stderr, "  version     print version information")
 }
