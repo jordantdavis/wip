@@ -173,6 +173,82 @@ func TestSaveWipConfig_RoundTrip(t *testing.T) {
 	}
 }
 
+// TestLoadWipConfig_OnWorktreeLaunch verifies that the on-worktree-launch field
+// is parsed correctly from .wip.yml.
+func TestLoadWipConfig_OnWorktreeLaunch(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	os.Chdir(dir)
+	defer os.Chdir(orig)
+
+	content := `submodules:
+  myservice:
+    on-worktree-launch:
+      - git pull
+      - npm install
+      - claude
+`
+	if err := os.WriteFile(".wip.yml", []byte(content), 0644); err != nil {
+		t.Fatalf("write .wip.yml: %v", err)
+	}
+
+	cfg, err := loadWipConfig()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	sub := cfg.Submodules["myservice"]
+	if len(sub.OnWorktreeLaunch) != 3 {
+		t.Fatalf("expected 3 on-worktree-launch commands, got %d", len(sub.OnWorktreeLaunch))
+	}
+	want := []string{"git pull", "npm install", "claude"}
+	for i, w := range want {
+		if sub.OnWorktreeLaunch[i] != w {
+			t.Errorf("OnWorktreeLaunch[%d]: want %q, got %q", i, w, sub.OnWorktreeLaunch[i])
+		}
+	}
+}
+
+// TestSaveWipConfig_OnWorktreeLaunchRoundTrip verifies that on-worktree-launch
+// survives a save/load round-trip alongside on-worktree-create.
+func TestSaveWipConfig_OnWorktreeLaunchRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	os.Chdir(dir)
+	defer os.Chdir(orig)
+
+	original := &WipConfig{
+		Submodules: map[string]SubmoduleConfig{
+			"api": {
+				OnWorktreeCreate: []string{"npm install"},
+				OnWorktreeLaunch: []string{"git pull", "npm run dev"},
+			},
+		},
+	}
+	if err := saveWipConfig(original); err != nil {
+		t.Fatalf("saveWipConfig: %v", err)
+	}
+	loaded, err := loadWipConfig()
+	if err != nil {
+		t.Fatalf("loadWipConfig: %v", err)
+	}
+	api := loaded.Submodules["api"]
+	if len(api.OnWorktreeCreate) != 1 || api.OnWorktreeCreate[0] != "npm install" {
+		t.Errorf("OnWorktreeCreate round-trip failed: %v", api.OnWorktreeCreate)
+	}
+	if len(api.OnWorktreeLaunch) != 2 {
+		t.Fatalf("expected 2 on-worktree-launch commands, got %d", len(api.OnWorktreeLaunch))
+	}
+	if api.OnWorktreeLaunch[0] != "git pull" || api.OnWorktreeLaunch[1] != "npm run dev" {
+		t.Errorf("OnWorktreeLaunch round-trip failed: %v", api.OnWorktreeLaunch)
+	}
+}
+
 // TestStringList_Flag tests that a stringList flag accumulates values in order.
 func TestStringList_Flag(t *testing.T) {
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)

@@ -15,8 +15,10 @@ func submoduleAdd(args []string) {
 	name := fs.String("name", "", "submodule name and checkout directory at repo root (optional)")
 	var onWorktreeCreate stringList
 	fs.Var(&onWorktreeCreate, "on-worktree-create", "command to run when a new worktree is created for this submodule (repeatable)")
+	var onWorktreeLaunch stringList
+	fs.Var(&onWorktreeLaunch, "on-worktree-launch", "command to run when a worktree is launched for this submodule (repeatable)")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: wip submodule add [--name <name>] [--on-worktree-create <cmd>] <url>")
+		fmt.Fprintln(os.Stderr, "usage: wip submodule add [--name <name>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "args:")
 		fmt.Fprintln(os.Stderr, "  url                    git remote URL (https://, http://, git://, or git@)")
@@ -24,6 +26,7 @@ func submoduleAdd(args []string) {
 		fmt.Fprintln(os.Stderr, "flags:")
 		fmt.Fprintln(os.Stderr, "  --name                 submodule name and checkout directory at repo root (optional)")
 		fmt.Fprintln(os.Stderr, "  --on-worktree-create   command to run when a new worktree is created (repeatable)")
+		fmt.Fprintln(os.Stderr, "  --on-worktree-launch   command to run when a worktree is launched (repeatable)")
 	}
 	fs.Parse(args)
 
@@ -69,6 +72,19 @@ func submoduleAdd(args []string) {
 		}
 		subCfg := cfg.Submodules[subName]
 		subCfg.OnWorktreeCreate = []string(onWorktreeCreate)
+		cfg.Submodules[subName] = subCfg
+		if err := saveWipConfig(cfg); err != nil {
+			fmt.Fprintln(os.Stderr, "warning: failed to save .wip.yml:", err)
+		}
+	}
+
+	if len(onWorktreeLaunch) > 0 {
+		subName := *name
+		if subName == "" {
+			subName = strings.TrimSuffix(path.Base(url), ".git")
+		}
+		subCfg := cfg.Submodules[subName]
+		subCfg.OnWorktreeLaunch = []string(onWorktreeLaunch)
 		cfg.Submodules[subName] = subCfg
 		if err := saveWipConfig(cfg); err != nil {
 			fmt.Fprintln(os.Stderr, "warning: failed to save .wip.yml:", err)

@@ -10,7 +10,8 @@ import (
 
 // SubmoduleConfig holds per-submodule configuration from .wip.yml.
 type SubmoduleConfig struct {
-	OnWorktreeCreate []string `yaml:"on-worktree-create"`
+	OnWorktreeCreate  []string `yaml:"on-worktree-create"`
+	OnWorktreeLaunch  []string `yaml:"on-worktree-launch"`
 }
 
 // WipConfig is the top-level structure for .wip.yml.

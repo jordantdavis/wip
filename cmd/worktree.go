@@ -20,6 +20,8 @@ func Worktree(args []string) {
 		worktreeList(args[1:])
 	case "remove":
 		worktreeRemove(args[1:])
+	case "launch":
+		worktreeLaunch(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "unknown worktree command: %s\n", args[0])
 		worktreeUsage()
@@ -34,6 +36,7 @@ func worktreeUsage() {
 	fmt.Fprintln(os.Stderr, "  add <submodule> <worktree>      create a new worktree in a submodule")
 	fmt.Fprintln(os.Stderr, "  list                            list all worktrees")
 	fmt.Fprintln(os.Stderr, "  remove <submodule> <worktree>   remove a worktree from a submodule")
+	fmt.Fprintln(os.Stderr, "  launch <submodule> <worktree>   run on-worktree-launch hooks for a worktree")
 }
 
 func validateBranchName(name string) error {

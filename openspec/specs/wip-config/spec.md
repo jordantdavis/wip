@@ -19,9 +19,11 @@ submodules:
   <name>:
     on-worktree-create:
       - <command>
+    on-worktree-launch:
+      - <command>
 ```
 
-All keys SHALL be kebab-case. The `submodules` map MAY be empty. The `on-worktree-create` field is optional per submodule entry. Each command in `on-worktree-create` is a string.
+All keys SHALL be kebab-case. The `submodules` map MAY be empty. The `on-worktree-create` and `on-worktree-launch` fields are both optional per submodule entry. Each command in either list is a string.
 
 #### Scenario: Empty config is valid
 - **WHEN** `.wip.yml` contains only an empty `submodules` map
@@ -30,6 +32,14 @@ All keys SHALL be kebab-case. The `submodules` map MAY be empty. The `on-worktre
 #### Scenario: Config with on-worktree-create list is valid
 - **WHEN** `.wip.yml` contains a submodule entry with an `on-worktree-create` list of strings
 - **THEN** the file is parsed correctly and the commands are accessible
+
+#### Scenario: Config with on-worktree-launch list is valid
+- **WHEN** `.wip.yml` contains a submodule entry with an `on-worktree-launch` list of strings
+- **THEN** the file is parsed correctly and the commands are accessible
+
+#### Scenario: Config with both hook lists is valid
+- **WHEN** `.wip.yml` contains a submodule entry with both `on-worktree-create` and `on-worktree-launch` lists
+- **THEN** both lists are parsed correctly and independently accessible
 
 ### Requirement: .wip.yml is required for wip submodule add and wip worktree add
 Both `wip submodule add` and `wip worktree add` SHALL check for the presence of `.wip.yml` at the repo root before proceeding. If absent, the CLI SHALL print an error directing the user to run `wip init` and exit with a non-zero code.
