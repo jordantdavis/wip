@@ -55,7 +55,7 @@ func worktreeAdd(args []string) {
 		os.Exit(1)
 	}
 
-	if err := validateWorktreeName(worktree); err != nil {
+	if err := validateBranchName(worktree); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -66,7 +66,7 @@ func worktreeAdd(args []string) {
 		os.Exit(1)
 	}
 
-	absWorktreePath := filepath.Join(root, "worktrees", submodule, worktree)
+	absWorktreePath := filepath.Join(root, "worktrees", submodule, worktreePathSegment(worktree))
 	submoduleDir := filepath.Join(root, submodule)
 
 	if err := os.MkdirAll(filepath.Join(root, "worktrees", submodule), 0755); err != nil {

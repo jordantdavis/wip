@@ -41,7 +41,7 @@ func worktreeRemove(args []string) {
 		os.Exit(1)
 	}
 
-	if err := validateWorktreeName(worktree); err != nil {
+	if err := validateBranchName(worktree); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -52,7 +52,7 @@ func worktreeRemove(args []string) {
 		os.Exit(1)
 	}
 
-	absWorktreePath := filepath.Join(root, "worktrees", submodule, worktree)
+	absWorktreePath := filepath.Join(root, "worktrees", submodule, worktreePathSegment(worktree))
 	if _, err := os.Stat(absWorktreePath); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "worktree %q not found in submodule %q\n", worktree, submodule)
 		os.Exit(1)

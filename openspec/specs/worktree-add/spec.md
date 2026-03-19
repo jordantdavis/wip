@@ -44,16 +44,35 @@ The submodule name SHALL be validated against `.gitmodules`. If the submodule is
 - **WHEN** the user runs `wip worktree add my-lib` with no second argument
 - **THEN** the CLI prints usage and exits with a non-zero code
 
-### Requirement: Worktree name must match the allowed character set
-The worktree name SHALL only contain uppercase letters, lowercase letters, digits, hyphens, and underscores (`[a-zA-Z0-9_-]`). Any other character SHALL cause the CLI to print an error and exit with a non-zero code.
+### Requirement: Worktree name must be a valid git branch name
+The worktree argument is treated as a branch name. The CLI SHALL validate it by running `git check-ref-format --branch <name>`. If the command exits with a non-zero code, the CLI SHALL print an error and exit with a non-zero code.
 
-#### Scenario: Valid worktree name
-- **WHEN** the worktree name contains only letters, digits, hyphens, and underscores
+#### Scenario: Valid simple branch name
+- **WHEN** the worktree argument is `my-feature`
 - **THEN** the name passes validation
 
-#### Scenario: Worktree name with invalid characters
-- **WHEN** the worktree name contains a space, slash, dot, or other disallowed character
+#### Scenario: Valid slash-delimited branch name
+- **WHEN** the worktree argument is `feature/my-thing`
+- **THEN** the name passes validation
+
+#### Scenario: Invalid branch name
+- **WHEN** the worktree argument contains characters disallowed by git (e.g., `..`, `@{`, trailing `.`, control characters)
 - **THEN** the CLI prints a validation error and exits with a non-zero code
+
+### Requirement: Worktree path is derived from the branch name by replacing slashes
+The worktree directory path SHALL be computed by replacing every `/` character in the branch name with `-`. The resulting string is used as the leaf directory name under `<repo root>/worktrees/<submodule>/`.
+
+#### Scenario: Branch name with no slashes
+- **WHEN** the branch name is `my-feature`
+- **THEN** the worktree path is `worktrees/<submodule>/my-feature`
+
+#### Scenario: Branch name with one slash
+- **WHEN** the branch name is `feature/my-thing`
+- **THEN** the worktree path is `worktrees/<submodule>/feature-my-thing`
+
+#### Scenario: Branch name with multiple slashes
+- **WHEN** the branch name is `team/user/ticket-123`
+- **THEN** the worktree path is `worktrees/<submodule>/team-user-ticket-123`
 
 ### Requirement: CLI creates the worktrees directory if it does not exist
 Before invoking git, the CLI SHALL create `<repo root>/worktrees/<submodule>/` using `os.MkdirAll` if it does not already exist.
@@ -66,23 +85,27 @@ Before invoking git, the CLI SHALL create `<repo root>/worktrees/<submodule>/` u
 - **WHEN** `worktrees/<submodule>/` already exists
 - **THEN** the CLI proceeds without error
 
-### Requirement: Default behavior creates a new branch
-By default, `wip worktree add` SHALL create a new branch named `<worktree>` and check it out at `<repo root>/worktrees/<submodule>/<worktree>/`. The CLI SHALL execute `git worktree add -b <worktree> <abs-path>` with its working directory set to `<repo root>/<submodule>/`.
+### Requirement: Default behavior creates a new branch using the full branch name
+By default, `wip worktree add` SHALL create a new branch using the full branch name argument (including any `/` characters) and check it out at the derived worktree path. The CLI SHALL execute `git worktree add -b <branch-name> <abs-worktree-path>` with its working directory set to `<repo root>/<submodule>/`.
 
-#### Scenario: New branch worktree created successfully
-- **WHEN** the user runs `wip worktree add my-lib my-feature` without `--existing-branch`
+#### Scenario: New branch with slash in name created successfully
+- **WHEN** the user runs `wip worktree add my-lib feature/my-thing`
+- **THEN** the CLI runs `git worktree add -b feature/my-thing <abs-path>/worktrees/my-lib/feature-my-thing` inside `my-lib/` and exits with code 0
+
+#### Scenario: New branch with simple name created successfully
+- **WHEN** the user runs `wip worktree add my-lib my-feature`
 - **THEN** the CLI runs `git worktree add -b my-feature <abs-path>/worktrees/my-lib/my-feature` inside `my-lib/` and exits with code 0
 
 #### Scenario: Git command fails
 - **WHEN** git returns a non-zero exit code (e.g., branch already exists)
 - **THEN** the CLI exits with the same non-zero code
 
-### Requirement: --existing-branch flag checks out an existing branch
-When `--existing-branch` is provided, the CLI SHALL execute `git worktree add <abs-path> <worktree>` (without `-b`), checking out the named branch. If the branch does not exist in the submodule repo, git will error and the CLI SHALL exit with that exit code.
+### Requirement: --existing-branch checks out the named branch at the derived path
+When `--existing-branch` is provided, the CLI SHALL execute `git worktree add <abs-worktree-path> <branch-name>` (without `-b`), where `<abs-worktree-path>` is derived from the branch name by replacing `/` with `-`.
 
-#### Scenario: Existing branch checked out successfully
-- **WHEN** the user runs `wip worktree add my-lib my-feature --existing-branch` and `my-feature` branch exists
-- **THEN** the CLI runs `git worktree add <abs-path>/worktrees/my-lib/my-feature my-feature` inside `my-lib/` and exits with code 0
+#### Scenario: Existing branch with slash in name checked out successfully
+- **WHEN** the user runs `wip worktree add my-lib feature/my-thing --existing-branch` and `feature/my-thing` branch exists
+- **THEN** the CLI runs `git worktree add <abs-path>/worktrees/my-lib/feature-my-thing feature/my-thing` inside `my-lib/` and exits with code 0
 
 #### Scenario: Branch does not exist
 - **WHEN** `--existing-branch` is used but the named branch does not exist in the submodule

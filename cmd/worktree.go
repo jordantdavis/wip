@@ -3,10 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"regexp"
+	"os/exec"
+	"strings"
 )
-
-var worktreeNameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 func Worktree(args []string) {
 	if len(args) < 1 {
@@ -37,11 +36,17 @@ func worktreeUsage() {
 	fmt.Fprintln(os.Stderr, "  remove <submodule> <worktree>   remove a worktree from a submodule")
 }
 
-func validateWorktreeName(name string) error {
-	if !worktreeNameRe.MatchString(name) {
-		return fmt.Errorf("worktree name %q must match [a-zA-Z0-9_-]+", name)
+func validateBranchName(name string) error {
+	cmd := exec.Command("git", "check-ref-format", "--branch", name)
+	cmd.Dir, _ = os.Getwd()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("invalid branch name %q", name)
 	}
 	return nil
+}
+
+func worktreePathSegment(branchName string) string {
+	return strings.ReplaceAll(branchName, "/", "-")
 }
 
 func repoRoot() (string, error) {

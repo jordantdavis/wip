@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 func worktreeList(_ []string) {
@@ -34,6 +36,7 @@ func worktreeList(_ []string) {
 	type pair struct {
 		submodule string
 		worktree  string
+		branch    string
 	}
 
 	var pairs []pair
@@ -52,7 +55,13 @@ func worktreeList(_ []string) {
 			if !worktreeEntry.IsDir() {
 				continue
 			}
-			pairs = append(pairs, pair{submodule: submoduleName, worktree: worktreeEntry.Name()})
+			absWorktreePath := filepath.Join(root, "worktrees", submoduleName, worktreeEntry.Name())
+			branch := ""
+			cmd := exec.Command("git", "-C", absWorktreePath, "branch", "--show-current")
+			if out, err := cmd.Output(); err == nil {
+				branch = strings.TrimSpace(string(out))
+			}
+			pairs = append(pairs, pair{submodule: submoduleName, worktree: worktreeEntry.Name(), branch: branch})
 		}
 	}
 
@@ -68,7 +77,17 @@ func worktreeList(_ []string) {
 		return pairs[i].worktree < pairs[j].worktree
 	})
 
+	subW, wtW := len("SUBMODULE"), len("WORKTREE")
 	for _, p := range pairs {
-		fmt.Printf("%s  %s\n", p.submodule, p.worktree)
+		if len(p.submodule) > subW {
+			subW = len(p.submodule)
+		}
+		if len(p.worktree) > wtW {
+			wtW = len(p.worktree)
+		}
+	}
+	fmt.Printf("%-*s  %-*s  %s\n", subW, "SUBMODULE", wtW, "WORKTREE", "BRANCH")
+	for _, p := range pairs {
+		fmt.Printf("%-*s  %-*s  %s\n", subW, p.submodule, wtW, p.worktree, p.branch)
 	}
 }
