@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -246,6 +247,136 @@ func TestSaveWipConfig_OnWorktreeLaunchRoundTrip(t *testing.T) {
 	}
 	if api.OnWorktreeLaunch[0] != "git pull" || api.OnWorktreeLaunch[1] != "npm run dev" {
 		t.Errorf("OnWorktreeLaunch round-trip failed: %v", api.OnWorktreeLaunch)
+	}
+}
+
+// makeTempDirInHome creates a temporary directory tree inside the user's home directory
+// and returns the root of the tree. t.Cleanup removes it.
+func makeTempDirInHome(t *testing.T) string {
+	t.Helper()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf("UserHomeDir: %v", err)
+	}
+	dir, err := os.MkdirTemp(home, ".wip-test-*")
+	if err != nil {
+		t.Fatalf("MkdirTemp in home: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(dir) })
+	return dir
+}
+
+// TestFindWipProject_FoundInCwd verifies that FindWipProject returns the current
+// directory when it directly contains .wip.yml.
+func TestFindWipProject_FoundInCwd(t *testing.T) {
+	root := makeTempDirInHome(t)
+	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("submodules: {}\n"), 0644); err != nil {
+		t.Fatalf("write .wip.yml: %v", err)
+	}
+
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer os.Chdir(orig)
+
+	project, err := FindWipProject()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if project.Root != root {
+		t.Errorf("expected root %q, got %q", root, project.Root)
+	}
+	if project.Config == nil {
+		t.Error("expected non-nil config")
+	}
+}
+
+// TestFindWipProject_FoundInParent verifies that FindWipProject walks up and finds
+// .wip.yml in a parent directory.
+func TestFindWipProject_FoundInParent(t *testing.T) {
+	root := makeTempDirInHome(t)
+	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("submodules: {}\n"), 0644); err != nil {
+		t.Fatalf("write .wip.yml: %v", err)
+	}
+
+	// Create a nested subdirectory and chdir into it.
+	sub := filepath.Join(root, "submodule", "src", "components")
+	if err := os.MkdirAll(sub, 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(sub); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer os.Chdir(orig)
+
+	project, err := FindWipProject()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if project.Root != root {
+		t.Errorf("expected root %q, got %q", root, project.Root)
+	}
+}
+
+// TestFindWipProject_NotFoundWithinHome verifies that FindWipProject returns an error
+// when no .wip.yml exists within the home directory tree.
+func TestFindWipProject_NotFoundWithinHome(t *testing.T) {
+	dir := makeTempDirInHome(t)
+	// No .wip.yml anywhere in this tree.
+	sub := filepath.Join(dir, "nested")
+	if err := os.MkdirAll(sub, 0755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(sub); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer os.Chdir(orig)
+
+	_, err = FindWipProject()
+	if err == nil {
+		t.Fatal("expected error when no .wip.yml found, got nil")
+	}
+	if !strings.Contains(err.Error(), "wip init") {
+		t.Errorf("expected error to mention 'wip init', got: %q", err.Error())
+	}
+}
+
+// TestFindWipProject_OutsideHome verifies that FindWipProject fails immediately
+// when cwd is outside the user's home directory.
+func TestFindWipProject_OutsideHome(t *testing.T) {
+	// Use os.TempDir() which is typically /tmp — outside home.
+	tmpDir, err := os.MkdirTemp("", "wip-outside-home-*")
+	if err != nil {
+		t.Fatalf("MkdirTemp: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	orig, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	defer os.Chdir(orig)
+
+	_, err = FindWipProject()
+	if err == nil {
+		t.Fatal("expected error when cwd is outside home, got nil")
 	}
 }
 

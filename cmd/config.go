@@ -2,11 +2,64 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"go.yaml.in/yaml/v4"
 )
+
+// WipProject represents a located wip project — its root directory and parsed config.
+type WipProject struct {
+	Root   string
+	Config *WipConfig
+}
+
+// FindWipProject locates the nearest .wip.yml by walking upward from the current
+// working directory, bounded by the user's home directory. Returns an error if the
+// cwd is outside the home directory, or if no .wip.yml is found within the tree.
+func FindWipProject() (*WipProject, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("could not determine home directory: %w", err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("could not determine working directory: %w", err)
+	}
+
+	// Fail immediately if cwd is outside the home directory.
+	if cwd != home && !strings.HasPrefix(cwd, home+string(filepath.Separator)) {
+		return nil, errors.New("no .wip.yml found — run wip init first")
+	}
+
+	dir := cwd
+	for {
+		candidate := filepath.Join(dir, ".wip.yml")
+		if _, err := os.Stat(candidate); err == nil {
+			cfg, err := loadWipConfigFrom(dir)
+			if err != nil {
+				return nil, err
+			}
+			return &WipProject{Root: dir, Config: cfg}, nil
+		}
+
+		if dir == home {
+			break
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Filesystem root guard — shouldn't be reached given home ceiling above.
+			break
+		}
+		dir = parent
+	}
+
+	return nil, errors.New("no .wip.yml found — run wip init first")
+}
 
 // SubmoduleConfig holds per-submodule configuration from .wip.yml.
 type SubmoduleConfig struct {
@@ -19,10 +72,10 @@ type WipConfig struct {
 	Submodules map[string]SubmoduleConfig `yaml:"submodules"`
 }
 
-// loadWipConfig reads .wip.yml from the current directory and parses it.
+// loadWipConfigFrom reads .wip.yml from the given directory and parses it.
 // Returns (nil, nil) if the file does not exist.
-func loadWipConfig() (*WipConfig, error) {
-	data, err := os.ReadFile(".wip.yml")
+func loadWipConfigFrom(dir string) (*WipConfig, error) {
+	data, err := os.ReadFile(filepath.Join(dir, ".wip.yml"))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -35,6 +88,16 @@ func loadWipConfig() (*WipConfig, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+// loadWipConfig reads .wip.yml from the current directory and parses it.
+// Returns (nil, nil) if the file does not exist.
+func loadWipConfig() (*WipConfig, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	return loadWipConfigFrom(cwd)
 }
 
 // requireWipConfig calls loadWipConfig and returns a user-facing error if the

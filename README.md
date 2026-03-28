@@ -54,6 +54,8 @@ go build -o wip .
 
 ## Commands
 
+All `wip submodule` and `wip worktree` commands work from any subdirectory of a wip project. `wip` walks up from the current directory to find the nearest `.wip.yml` and runs relative to that root automatically.
+
 ### `wip init`
 
 Initialize a `wip` workspace in the current directory.
@@ -73,6 +75,25 @@ Print version and platform information.
 ```bash
 wip version
 # wip v0.0.1 (darwin/arm64)
+```
+
+---
+
+### `wip root`
+
+Print the absolute path of the wip project root. Useful for scripting or navigating to the project root from a subdirectory.
+
+```bash
+wip root
+# /Users/jordan/workspace
+```
+
+Works from any subdirectory:
+
+```bash
+cd workspace/backend/src/handlers
+wip root
+# /Users/jordan/workspace
 ```
 
 ---
