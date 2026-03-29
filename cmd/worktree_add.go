@@ -14,10 +14,10 @@ func worktreeAdd(args []string) {
 	fs := flag.NewFlagSet("worktree add", flag.ExitOnError)
 	existingBranch := fs.Bool("existing-branch", false, "checkout an existing branch instead of creating a new one")
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: wip worktree add [--existing-branch] <submodule> <worktree>")
+		fmt.Fprintln(os.Stderr, "usage: wip worktree add [--existing-branch] <ref> <worktree>")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "args:")
-		fmt.Fprintln(os.Stderr, "  submodule    name of the submodule")
+		fmt.Fprintln(os.Stderr, "  ref          name of the ref")
 		fmt.Fprintln(os.Stderr, "  worktree     name of the worktree (also used as the branch name)")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "flags:")
@@ -45,13 +45,13 @@ func worktreeAdd(args []string) {
 		os.Exit(1)
 	}
 
-	found, err := submoduleExists(submodule)
+	found, err := refExists(submodule)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 	if !found {
-		fmt.Fprintf(os.Stderr, "submodule %q not found\n", submodule)
+		fmt.Fprintf(os.Stderr, "ref %q not found\n", submodule)
 		os.Exit(1)
 	}
 
@@ -95,7 +95,7 @@ func worktreeAdd(args []string) {
 		os.Exit(1)
 	}
 
-	hooks := cfg.Submodules[submodule].OnWorktreeCreate
+	hooks := cfg.Refs[submodule].OnWorktreeCreate
 	for _, hook := range hooks {
 		parts := strings.Fields(hook)
 		if len(parts) == 0 {

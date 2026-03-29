@@ -33,10 +33,10 @@ func worktreeUsage() {
 	fmt.Fprintln(os.Stderr, "usage: wip worktree <command> [args]")
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "commands:")
-	fmt.Fprintln(os.Stderr, "  add <submodule> <worktree>      create a new worktree in a submodule")
-	fmt.Fprintln(os.Stderr, "  list                            list all worktrees")
-	fmt.Fprintln(os.Stderr, "  remove <submodule> <worktree>   remove a worktree from a submodule")
-	fmt.Fprintln(os.Stderr, "  launch <submodule> <worktree>   run on-worktree-launch hooks for a worktree")
+	fmt.Fprintln(os.Stderr, "  add <ref> <worktree>      create a new worktree in a ref")
+	fmt.Fprintln(os.Stderr, "  list                      list all worktrees")
+	fmt.Fprintln(os.Stderr, "  remove <ref> <worktree>   remove a worktree from a ref")
+	fmt.Fprintln(os.Stderr, "  launch <ref> <worktree>   run on-worktree-launch hooks for a worktree")
 }
 
 func validateBranchName(name string) error {

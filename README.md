@@ -9,8 +9,8 @@
 ```bash
 mkdir workspace && cd workspace
 wip init
-wip submodule add https://github.com/org/backend.git
-wip submodule add https://github.com/org/frontend.git
+wip ref add https://github.com/org/backend.git
+wip ref add https://github.com/org/frontend.git
 wip worktree add backend my-feature
 wip worktree add frontend my-feature
 ```
@@ -19,8 +19,8 @@ This gives you:
 
 ```
 workspace/
-├── backend/              ← submodule checkout
-├── frontend/             ← submodule checkout
+├── backend/              ← ref checkout
+├── frontend/             ← ref checkout
 └── worktrees/
     ├── backend/
     │   └── my-feature/   ← isolated branch checkout
@@ -54,7 +54,7 @@ go build -o wip .
 
 ## Commands
 
-All `wip submodule` and `wip worktree` commands work from any subdirectory of a wip project. `wip` walks up from the current directory to find the nearest `.wip.yml` and runs relative to that root automatically.
+All `wip ref` and `wip worktree` commands work from any subdirectory of a wip project. `wip` walks up from the current directory to find the nearest `.wip.yml` and runs relative to that root automatically.
 
 ### `wip init`
 
@@ -98,87 +98,88 @@ wip root
 
 ---
 
-### `wip submodule add`
+### `wip ref add`
 
-Add a git submodule to the workspace.
+Add a git ref (external repo) to the workspace. Refs are git submodules configured to always track a branch HEAD and never dirty the parent repo's git status.
 
 ```
-wip submodule add [--name <name>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>
+wip ref add [--name <name>] [--branch <branch>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>
 ```
 
 | Flag | Description |
 |---|---|
-| `--name` | Submodule name and checkout directory. Defaults to the repo name from the URL. |
+| `--name` | Ref name and checkout directory. Defaults to the repo name from the URL. |
+| `--branch` | Branch to track. Defaults to `main`. |
 | `--on-worktree-create` | Shell command to run in a new worktree after creation. Repeatable. |
-| `--on-worktree-launch` | Shell command to run when `wip worktree launch` is called for this submodule. Repeatable. |
+| `--on-worktree-launch` | Shell command to run when `wip worktree launch` is called for this ref. Repeatable. |
 
 The URL must be one of: `https://`, `http://`, `git://`, or `git@<host>:<path>`.
 
 ```bash
 # Basic add
-wip submodule add https://github.com/org/backend.git
+wip ref add https://github.com/org/backend.git
 
-# Override name
-wip submodule add --name api https://github.com/org/backend.git
+# Override name and branch
+wip ref add --name api --branch develop https://github.com/org/backend.git
 
 # Register setup hooks (run in each new worktree)
-wip submodule add \
+wip ref add \
   --on-worktree-create "npm install" \
   --on-worktree-create "npm run build" \
   https://github.com/org/frontend.git
 
 # Register launch hooks (run on wip worktree launch)
-wip submodule add \
+wip ref add \
   --on-worktree-launch "npm run dev" \
   https://github.com/org/frontend.git
 ```
 
 ---
 
-### `wip submodule list`
+### `wip ref list`
 
-List all registered submodules.
+List all registered refs.
 
 ```bash
-wip submodule list
-# backend   https://github.com/org/backend.git
-# frontend  https://github.com/org/frontend.git
+wip ref list
+# backend   main  https://github.com/org/backend.git
+# frontend  main  https://github.com/org/frontend.git
 ```
 
 ---
 
-### `wip submodule remove`
+### `wip ref remove`
 
-Fully remove a submodule by name. Deinits it, removes the tracked path, and cleans up `.git/modules/<name>`.
+Fully remove a ref by name. Deinits it, removes the tracked path, and cleans up `.git/modules/<name>`.
 
 ```
-wip submodule remove <name>
+wip ref remove <name>
 ```
 
 ```bash
-wip submodule remove backend
+wip ref remove backend
 ```
 
 ---
 
-### `wip submodule sync`
+### `wip ref sync`
 
-Update submodules to the latest remote state. Syncs all submodules in parallel by default.
+Update refs to the latest remote state. Syncs all refs in parallel by default.
 
 ```
-wip submodule sync [--name <name>]
+wip ref sync [--name <name>]
 ```
 
 | Flag | Description |
 |---|---|
-| `--name` | Sync only the named submodule. |
+| `--name` | Sync only the named ref. |
 
 ```bash
 # Sync all (parallel)
-wip submodule sync
+wip ref sync
 
 # Sync one
-wip submodule sync --name backend
+wip ref sync --name backend
 ```
 
 Output:
@@ -189,12 +190,30 @@ Output:
 
 ---
 
+### `wip ref restore`
+
+Initialize and sync all registered refs. Use this after cloning the workspace repo to a new machine.
+
+```bash
+wip ref restore
+```
+
+Output:
+```
+✓ backend
+✓ frontend
+```
+
+Always fetches the current branch HEAD (`--remote`) so teammates get the same view of the codebase rather than a stale committed SHA.
+
+---
+
 ### `wip worktree add`
 
-Create a new worktree in a submodule. Creates a new branch by default.
+Create a new worktree in a ref. Creates a new branch by default.
 
 ```
-wip worktree add [--existing-branch] <submodule> <worktree>
+wip worktree add [--existing-branch] <ref> <worktree>
 ```
 
 | Flag | Description |
@@ -203,7 +222,7 @@ wip worktree add [--existing-branch] <submodule> <worktree>
 
 Worktree names must match `[a-zA-Z0-9_-]+`. The name is used as both the directory name and the branch name.
 
-The worktree is created at `worktrees/<submodule>/<worktree>/`. Any `on-worktree-create` hooks registered for the submodule run automatically in the new worktree directory.
+The worktree is created at `worktrees/<ref>/<worktree>/`. Any `on-worktree-create` hooks registered for the ref run automatically in the new worktree directory.
 
 ```bash
 # New branch
@@ -217,13 +236,13 @@ wip worktree add --existing-branch backend main
 
 ### `wip worktree list`
 
-List all worktrees across all submodules.
+List all worktrees across all refs.
 
 ```bash
 wip worktree list
-# SUBMODULE  WORKTREE    BRANCH
-# backend    my-feature  my-feature
-# frontend   my-feature  my-feature
+# REF       WORKTREE    BRANCH
+# backend   my-feature  my-feature
+# frontend  my-feature  my-feature
 ```
 
 ---
@@ -233,7 +252,7 @@ wip worktree list
 Run `on-worktree-launch` hooks for an existing worktree. Use this to start services or open editors associated with a worktree.
 
 ```
-wip worktree launch <submodule> <worktree>
+wip worktree launch <ref> <worktree>
 ```
 
 ```bash
@@ -241,16 +260,16 @@ wip worktree launch backend my-feature
 # ✓ npm run dev
 ```
 
-If no `on-worktree-launch` hooks are configured for the submodule, the command exits with a message.
+If no `on-worktree-launch` hooks are configured for the ref, the command exits with a message.
 
 ---
 
 ### `wip worktree remove`
 
-Remove a worktree from a submodule.
+Remove a worktree from a ref.
 
 ```
-wip worktree remove [--delete-branch] <submodule> <worktree>
+wip worktree remove [--delete-branch] <ref> <worktree>
 ```
 
 | Flag | Description |
@@ -272,7 +291,7 @@ wip worktree remove --delete-branch backend my-feature
 `wip init` creates a `.wip.yml` at the workspace root. You can also edit it directly.
 
 ```yaml
-submodules:
+refs:
   backend:
     on-worktree-create:
       - go mod download
@@ -286,9 +305,9 @@ submodules:
       - npm run dev
 ```
 
-`on-worktree-create` commands are executed in order inside the new worktree directory whenever `wip worktree add` runs for that submodule.
+`on-worktree-create` commands are executed in order inside the new worktree directory whenever `wip worktree add` runs for that ref.
 
-`on-worktree-launch` commands are executed in order inside the worktree directory whenever `wip worktree launch` runs for that submodule.
+`on-worktree-launch` commands are executed in order inside the worktree directory whenever `wip worktree launch` runs for that ref.
 
 Each command is reported as a success or failure:
 

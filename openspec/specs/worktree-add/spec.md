@@ -12,26 +12,26 @@ Before executing any worktree operation, the CLI SHALL verify the current workin
 - **THEN** the CLI prints an error indicating the directory is not a git repository and exits with a non-zero code
 
 ### Requirement: Submodule name is a required positional argument
-`wip worktree add` SHALL accept the submodule name as the first positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
+`wip worktree add` SHALL accept the ref name as the first positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
 
-#### Scenario: Submodule name provided
+#### Scenario: Ref name provided
 - **WHEN** the user runs `wip worktree add my-lib my-feature`
-- **THEN** the command proceeds with `my-lib` as the submodule name
+- **THEN** the command proceeds with `my-lib` as the ref name
 
-#### Scenario: Submodule name omitted
+#### Scenario: Ref name omitted
 - **WHEN** the user runs `wip worktree add` with no arguments
 - **THEN** the CLI prints usage and exits with a non-zero code
 
-### Requirement: Submodule must exist
+### Requirement: Ref must exist
 The submodule name SHALL be validated against `.gitmodules`. If the submodule is not registered, the CLI SHALL print an error and exit with a non-zero code.
 
-#### Scenario: Submodule exists
-- **WHEN** the submodule name is registered in `.gitmodules`
-- **THEN** the command proceeds past the submodule existence check
+#### Scenario: Ref exists
+- **WHEN** the ref name is registered in `.gitmodules`
+- **THEN** the command proceeds past the ref existence check
 
-#### Scenario: Submodule does not exist
-- **WHEN** the submodule name is not registered in `.gitmodules`
-- **THEN** the CLI prints an error indicating the submodule was not found and exits with a non-zero code
+#### Scenario: Ref does not exist
+- **WHEN** the ref name is not registered in `.gitmodules`
+- **THEN** the CLI prints an error indicating the ref was not found and exits with a non-zero code
 
 ### Requirement: Worktree name is a required positional argument
 `wip worktree add` SHALL accept the worktree name as the second positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
@@ -60,41 +60,41 @@ The worktree argument is treated as a branch name. The CLI SHALL validate it by 
 - **THEN** the CLI prints a validation error and exits with a non-zero code
 
 ### Requirement: Worktree path is derived from the branch name by replacing slashes
-The worktree directory path SHALL be computed by replacing every `/` character in the branch name with `-`. The resulting string is used as the leaf directory name under `<repo root>/worktrees/<submodule>/`.
+The worktree directory path SHALL be computed by replacing every `/` character in the branch name with `-`. The resulting string is used as the leaf directory name under `<repo root>/worktrees/<ref>/`.
 
 #### Scenario: Branch name with no slashes
 - **WHEN** the branch name is `my-feature`
-- **THEN** the worktree path is `worktrees/<submodule>/my-feature`
+- **THEN** the worktree path is `worktrees/<ref>/my-feature`
 
 #### Scenario: Branch name with one slash
 - **WHEN** the branch name is `feature/my-thing`
-- **THEN** the worktree path is `worktrees/<submodule>/feature-my-thing`
+- **THEN** the worktree path is `worktrees/<ref>/feature-my-thing`
 
 #### Scenario: Branch name with multiple slashes
 - **WHEN** the branch name is `team/user/ticket-123`
-- **THEN** the worktree path is `worktrees/<submodule>/team-user-ticket-123`
+- **THEN** the worktree path is `worktrees/<ref>/team-user-ticket-123`
 
 ### Requirement: CLI creates the worktrees directory if it does not exist
-Before invoking git, the CLI SHALL create `<repo root>/worktrees/<submodule>/` using `os.MkdirAll` if it does not already exist.
+Before invoking git, the CLI SHALL create `<repo root>/worktrees/<ref>/` using `os.MkdirAll` if it does not already exist.
 
 #### Scenario: Directory does not exist
-- **WHEN** `worktrees/<submodule>/` does not exist
+- **WHEN** `worktrees/<ref>/` does not exist
 - **THEN** the CLI creates it before running git
 
 #### Scenario: Directory already exists
-- **WHEN** `worktrees/<submodule>/` already exists
+- **WHEN** `worktrees/<ref>/` already exists
 - **THEN** the CLI proceeds without error
 
 ### Requirement: Default behavior creates a new branch using the full branch name
-By default, `wip worktree add` SHALL create a new branch using the full branch name argument (including any `/` characters) and check it out at the derived worktree path. The CLI SHALL execute `git worktree add -b <branch-name> <abs-worktree-path>` with its working directory set to `<repo root>/<submodule>/`.
+By default, `wip worktree add` SHALL create a new branch using the full branch name argument (including any `/` characters) and check it out at the derived worktree path. The CLI SHALL execute `git worktree add -b <branch-name> <abs-worktree-path>` with its working directory set to `<repo root>/<ref>/`.
 
 #### Scenario: New branch with slash in name created successfully
 - **WHEN** the user runs `wip worktree add my-lib feature/my-thing`
-- **THEN** the CLI runs `git worktree add -b feature/my-thing <abs-path>/worktrees/my-lib/feature-my-thing` inside `my-lib/` and exits with code 0
+- **THEN** the CLI runs `git worktree add -b feature/my-thing <abs-path>/worktrees/my-lib/feature-my-thing` inside `my-lib/ and exits with code 0
 
 #### Scenario: New branch with simple name created successfully
 - **WHEN** the user runs `wip worktree add my-lib my-feature`
-- **THEN** the CLI runs `git worktree add -b my-feature <abs-path>/worktrees/my-lib/my-feature` inside `my-lib/` and exits with code 0
+- **THEN** the CLI runs `git worktree add -b my-feature <abs-path>/worktrees/my-lib/my-feature` inside `my-lib/ and exits with code 0
 
 #### Scenario: Git command fails
 - **WHEN** git returns a non-zero exit code (e.g., branch already exists)
@@ -105,10 +105,10 @@ When `--existing-branch` is provided, the CLI SHALL execute `git worktree add <a
 
 #### Scenario: Existing branch with slash in name checked out successfully
 - **WHEN** the user runs `wip worktree add my-lib feature/my-thing --existing-branch` and `feature/my-thing` branch exists
-- **THEN** the CLI runs `git worktree add <abs-path>/worktrees/my-lib/feature-my-thing feature/my-thing` inside `my-lib/` and exits with code 0
+- **THEN** the CLI runs `git worktree add <abs-path>/worktrees/my-lib/feature-my-thing feature/my-thing` inside `my-lib/ and exits with code 0
 
 #### Scenario: Branch does not exist
-- **WHEN** `--existing-branch` is used but the named branch does not exist in the submodule
+- **WHEN** `--existing-branch` is used but the named branch does not exist in the ref
 - **THEN** git errors and the CLI exits with git's non-zero exit code
 
 ### Requirement: CLI streams git output to the terminal
@@ -119,18 +119,18 @@ The CLI SHALL stream stdout and stderr from the git subprocess directly to the t
 - **THEN** the output appears in the terminal in real time
 
 ### Requirement: on-worktree-create hooks run after successful worktree creation
-After `git worktree add` completes successfully, `wip worktree add` SHALL check `.wip.yml` for an `on-worktree-create` list under the target submodule. If present, each command SHALL be executed in list order with the working directory set to the newly created worktree path.
+After `git worktree add` completes successfully, `wip worktree add` SHALL check `.wip.yml` for an `on-worktree-create` list under the target ref. If present, each command SHALL be executed in list order with the working directory set to the newly created worktree path.
 
 #### Scenario: on-worktree-create hook executes successfully
-- **WHEN** the submodule has an `on-worktree-create` list in `.wip.yml` and all commands exit with code 0
+- **WHEN** the ref has an `on-worktree-create` list in `.wip.yml` and all commands exit with code 0
 - **THEN** all commands run in order inside the worktree directory and the CLI exits with code 0
 
 #### Scenario: No on-worktree-create hook configured
-- **WHEN** the submodule has no `on-worktree-create` entry in `.wip.yml`
+- **WHEN** the ref has no `on-worktree-create` entry in `.wip.yml`
 - **THEN** `wip worktree add` completes after git without running any hooks
 
-#### Scenario: Submodule has no entry in .wip.yml
-- **WHEN** the submodule name does not appear in the `.wip.yml` submodules map
+#### Scenario: Ref has no entry in .wip.yml
+- **WHEN** the ref name does not appear in the `.wip.yml` refs map
 - **THEN** `wip worktree add` completes after git without running any hooks
 
 ### Requirement: on-worktree-create hook failure produces a warning but leaves the worktree intact
@@ -145,7 +145,7 @@ If any command in the `on-worktree-create` list exits with a non-zero code, the 
 - **THEN** a warning is printed for each failure, the worktree remains on disk, and the CLI exits with code 0
 
 ### Requirement: on-worktree-create commands run with cwd set to the worktree directory
-Each command in the `on-worktree-create` list SHALL be executed with its working directory set to the absolute path of the newly created worktree (`<repo root>/worktrees/<submodule>/<worktree>/`).
+Each command in the `on-worktree-create` list SHALL be executed with its working directory set to the absolute path of the newly created worktree (`<repo root>/worktrees/<ref>/<worktree>/`).
 
 #### Scenario: Working directory is the worktree
 - **WHEN** an `on-worktree-create` command runs

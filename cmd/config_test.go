@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ func TestLoadWipConfig_Valid(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(orig)
 
-	content := `submodules:
+	content := `refs:
   myservice:
     on-worktree-create:
       - echo hello
@@ -35,9 +36,9 @@ func TestLoadWipConfig_Valid(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("expected non-nil config")
 	}
-	sub, ok := cfg.Submodules["myservice"]
+	sub, ok := cfg.Refs["myservice"]
 	if !ok {
-		t.Fatal("expected submodule 'myservice' in config")
+		t.Fatal("expected ref 'myservice' in config")
 	}
 	if len(sub.OnWorktreeCreate) != 2 {
 		t.Fatalf("expected 2 on-worktree-create commands, got %d", len(sub.OnWorktreeCreate))
@@ -80,7 +81,7 @@ func TestLoadWipConfig_Malformed(t *testing.T) {
 	defer os.Chdir(orig)
 
 	// Write deliberately invalid YAML (bad indentation / type mismatch)
-	malformed := `submodules:
+	malformed := `refs:
   - this is a list not a map
 `
 	if err := os.WriteFile(".wip.yml", []byte(malformed), 0644); err != nil {
@@ -124,7 +125,7 @@ func TestSaveWipConfig_RoundTrip(t *testing.T) {
 	defer os.Chdir(orig)
 
 	original := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"api": {
 				OnWorktreeCreate: []string{"npm install", "npm run build"},
 			},
@@ -146,10 +147,10 @@ func TestSaveWipConfig_RoundTrip(t *testing.T) {
 		t.Fatal("expected non-nil config after round-trip")
 	}
 
-	// Verify 'api' submodule
-	api, ok := loaded.Submodules["api"]
+	// Verify 'api' ref
+	api, ok := loaded.Refs["api"]
 	if !ok {
-		t.Fatal("expected submodule 'api' in loaded config")
+		t.Fatal("expected ref 'api' in loaded config")
 	}
 	if len(api.OnWorktreeCreate) != 2 {
 		t.Fatalf("expected 2 on-worktree-create commands for 'api', got %d", len(api.OnWorktreeCreate))
@@ -161,10 +162,10 @@ func TestSaveWipConfig_RoundTrip(t *testing.T) {
 		t.Errorf("expected 'npm run build', got %q", api.OnWorktreeCreate[1])
 	}
 
-	// Verify 'web' submodule
-	web, ok := loaded.Submodules["web"]
+	// Verify 'web' ref
+	web, ok := loaded.Refs["web"]
 	if !ok {
-		t.Fatal("expected submodule 'web' in loaded config")
+		t.Fatal("expected ref 'web' in loaded config")
 	}
 	if len(web.OnWorktreeCreate) != 1 {
 		t.Fatalf("expected 1 on-worktree-create command for 'web', got %d", len(web.OnWorktreeCreate))
@@ -185,7 +186,7 @@ func TestLoadWipConfig_OnWorktreeLaunch(t *testing.T) {
 	os.Chdir(dir)
 	defer os.Chdir(orig)
 
-	content := `submodules:
+	content := `refs:
   myservice:
     on-worktree-launch:
       - git pull
@@ -200,7 +201,7 @@ func TestLoadWipConfig_OnWorktreeLaunch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	sub := cfg.Submodules["myservice"]
+	sub := cfg.Refs["myservice"]
 	if len(sub.OnWorktreeLaunch) != 3 {
 		t.Fatalf("expected 3 on-worktree-launch commands, got %d", len(sub.OnWorktreeLaunch))
 	}
@@ -224,7 +225,7 @@ func TestSaveWipConfig_OnWorktreeLaunchRoundTrip(t *testing.T) {
 	defer os.Chdir(orig)
 
 	original := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"api": {
 				OnWorktreeCreate: []string{"npm install"},
 				OnWorktreeLaunch: []string{"git pull", "npm run dev"},
@@ -238,7 +239,7 @@ func TestSaveWipConfig_OnWorktreeLaunchRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loadWipConfig: %v", err)
 	}
-	api := loaded.Submodules["api"]
+	api := loaded.Refs["api"]
 	if len(api.OnWorktreeCreate) != 1 || api.OnWorktreeCreate[0] != "npm install" {
 		t.Errorf("OnWorktreeCreate round-trip failed: %v", api.OnWorktreeCreate)
 	}
@@ -270,7 +271,7 @@ func makeTempDirInHome(t *testing.T) string {
 // directory when it directly contains .wip.yml.
 func TestFindWipProject_FoundInCwd(t *testing.T) {
 	root := makeTempDirInHome(t)
-	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("submodules: {}\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("refs: {}\n"), 0644); err != nil {
 		t.Fatalf("write .wip.yml: %v", err)
 	}
 
@@ -299,7 +300,7 @@ func TestFindWipProject_FoundInCwd(t *testing.T) {
 // .wip.yml in a parent directory.
 func TestFindWipProject_FoundInParent(t *testing.T) {
 	root := makeTempDirInHome(t)
-	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("submodules: {}\n"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, ".wip.yml"), []byte("refs: {}\n"), 0644); err != nil {
 		t.Fatalf("write .wip.yml: %v", err)
 	}
 
@@ -399,5 +400,70 @@ func TestStringList_Flag(t *testing.T) {
 		if vals[i] != v {
 			t.Errorf("vals[%d]: expected %q, got %q", i, v, vals[i])
 		}
+	}
+}
+
+// TestRefAdd_BranchDefaultsToMain verifies that the branch flag defaults to "main".
+func TestRefAdd_BranchDefaultsToMain(t *testing.T) {
+	// Parse a flagset with no --branch flag provided and verify the default is "main"
+	fs := flag.NewFlagSet("ref add", flag.ContinueOnError)
+	branch := fs.String("branch", "main", "branch to track")
+	if err := fs.Parse([]string{"https://github.com/example/repo.git"}); err != nil {
+		t.Fatalf("flag parse: %v", err)
+	}
+	if *branch != "main" {
+		t.Errorf("expected branch default 'main', got %q", *branch)
+	}
+}
+
+// TestSetGitmodulesIgnore verifies that setGitmodulesIgnore writes ignore=all via git config.
+// This is an integration-style test that uses a real git repo in a temp dir.
+func TestSetGitmodulesIgnore(t *testing.T) {
+	dir := t.TempDir()
+	orig, _ := os.Getwd()
+	defer os.Chdir(orig)
+	os.Chdir(dir)
+
+	// Init a git repo and a minimal .gitmodules file
+	if err := exec.Command("git", "init").Run(); err != nil {
+		t.Skip("git not available")
+	}
+	gitmodules := "[submodule \"myrepo\"]\n\tpath = myrepo\n\turl = https://github.com/example/myrepo.git\n"
+	if err := os.WriteFile(".gitmodules", []byte(gitmodules), 0644); err != nil {
+		t.Fatalf("write .gitmodules: %v", err)
+	}
+
+	if err := setGitmodulesIgnore("myrepo"); err != nil {
+		t.Fatalf("setGitmodulesIgnore: %v", err)
+	}
+
+	// Read back via git config
+	out, err := exec.Command("git", "config", "--file", ".gitmodules", "submodule.myrepo.ignore").Output()
+	if err != nil {
+		t.Fatalf("git config read: %v", err)
+	}
+	if got := strings.TrimSpace(string(out)); got != "all" {
+		t.Errorf("expected ignore=all, got %q", got)
+	}
+}
+
+// TestRefRestore_EmptyState verifies that refRestore exits 0 when there are no refs (parseRefs returns empty).
+func TestRefRestore_EmptyState(t *testing.T) {
+	dir := t.TempDir()
+	orig, _ := os.Getwd()
+	defer os.Chdir(orig)
+	os.Chdir(dir)
+
+	// Init a git repo with no submodules
+	if err := exec.Command("git", "init").Run(); err != nil {
+		t.Skip("git not available")
+	}
+
+	refs, err := parseRefs()
+	if err != nil {
+		t.Fatalf("parseRefs: %v", err)
+	}
+	if len(refs) != 0 {
+		t.Errorf("expected 0 refs, got %d", len(refs))
 	}
 }

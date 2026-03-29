@@ -48,4 +48,4 @@ The CLI help output SHALL list `version` as an available command when usage is p
 
 #### Scenario: version entry matches style of other commands
 - **WHEN** the help output is printed
-- **THEN** the `version` line uses the same indentation and lowercase verb-first description format as `init`, `submodule`, and `worktree`
+- **THEN** the `version` line uses the same indentation and lowercase verb-first description format as `init`, `ref`, and `worktree`

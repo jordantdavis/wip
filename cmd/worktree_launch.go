@@ -12,10 +12,10 @@ import (
 func worktreeLaunch(args []string) {
 	fs := flag.NewFlagSet("worktree launch", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: wip worktree launch <submodule> <worktree>")
+		fmt.Fprintln(os.Stderr, "usage: wip worktree launch <ref> <worktree>")
 		fmt.Fprintln(os.Stderr, "")
 		fmt.Fprintln(os.Stderr, "args:")
-		fmt.Fprintln(os.Stderr, "  submodule    name of the submodule")
+		fmt.Fprintln(os.Stderr, "  ref          name of the ref")
 		fmt.Fprintln(os.Stderr, "  worktree     name of the worktree")
 	}
 	fs.Parse(args)
@@ -48,11 +48,11 @@ func worktreeLaunch(args []string) {
 
 	absWorktreePath := filepath.Join(root, "worktrees", submodule, worktreePathSegment(worktree))
 	if _, err := os.Stat(absWorktreePath); os.IsNotExist(err) {
-		fmt.Fprintf(os.Stderr, "worktree %q not found for submodule %q\n", worktree, submodule)
+		fmt.Fprintf(os.Stderr, "worktree %q not found for ref %q\n", worktree, submodule)
 		os.Exit(1)
 	}
 
-	hooks := cfg.Submodules[submodule].OnWorktreeLaunch
+	hooks := cfg.Refs[submodule].OnWorktreeLaunch
 	if len(hooks) == 0 {
 		fmt.Fprintf(os.Stdout, "no on-worktree-launch hooks configured for %s\n", submodule)
 		os.Exit(0)

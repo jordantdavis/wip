@@ -19,7 +19,7 @@ func Init(args []string) {
 		}
 		// Scaffold .wip.yml if not already present
 		if _, err := os.Stat(".wip.yml"); os.IsNotExist(err) {
-			cfg := &WipConfig{Submodules: map[string]SubmoduleConfig{}}
+			cfg := &WipConfig{Refs: map[string]RefConfig{}}
 			if err := saveWipConfig(cfg); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
@@ -31,7 +31,7 @@ func Init(args []string) {
 	if strings.TrimSpace(gitDir) == ".git" {
 		// Already at the root of a git repo — scaffold .wip.yml if not already present.
 		if _, err := os.Stat(".wip.yml"); os.IsNotExist(err) {
-			cfg := &WipConfig{Submodules: map[string]SubmoduleConfig{}}
+			cfg := &WipConfig{Refs: map[string]RefConfig{}}
 			if err := saveWipConfig(cfg); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)

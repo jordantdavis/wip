@@ -32,7 +32,7 @@ If the current working directory is not within the user's home directory (i.e., 
 - **THEN** the command exits immediately with a non-zero code and an error message, without performing any directory walk
 
 ### Requirement: Subcommands run relative to the project root
-Once the project root is discovered, all subcommands (`wip submodule`, `wip worktree`) SHALL execute as if they were invoked from the project root directory. Path construction, git commands, and config reads all resolve relative to the project root.
+Once the project root is discovered, all subcommands (`wip ref`, `wip worktree`) SHALL execute as if they were invoked from the project root directory. Path construction, git commands, and config reads all resolve relative to the project root.
 
 #### Scenario: Command invoked from a subdirectory
 - **WHEN** the user runs `wip worktree list` from a subdirectory of the project

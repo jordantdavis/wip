@@ -20,7 +20,7 @@ func main() {
 		cmd.Version()
 	case "root":
 		cmd.Root(os.Args[2:])
-	case "submodule", "worktree":
+	case "ref", "worktree":
 		project, err := cmd.FindWipProject()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -31,8 +31,8 @@ func main() {
 			os.Exit(1)
 		}
 		switch os.Args[1] {
-		case "submodule":
-			cmd.Submodule(os.Args[2:])
+		case "ref":
+			cmd.Ref(os.Args[2:])
 		case "worktree":
 			cmd.Worktree(os.Args[2:])
 		}
@@ -49,7 +49,7 @@ func printUsage() {
 	fmt.Fprintln(os.Stderr, "commands:")
 	fmt.Fprintln(os.Stderr, "  init        initialize a wip project in the current directory")
 	fmt.Fprintln(os.Stderr, "  root        print the project root directory")
-	fmt.Fprintln(os.Stderr, "  submodule   manage git submodules")
+	fmt.Fprintln(os.Stderr, "  ref         manage git refs")
 	fmt.Fprintln(os.Stderr, "  worktree    manage git worktrees")
 	fmt.Fprintln(os.Stderr, "  version     print version information")
 }

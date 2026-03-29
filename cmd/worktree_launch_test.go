@@ -73,7 +73,7 @@ func captureStdout(t *testing.T, f func()) string {
 // produces a ✓ line in stdout.
 func TestWorktreeLaunch_HooksRunSuccessfully(t *testing.T) {
 	cfg := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"myservice": {OnWorktreeLaunch: []string{"echo hello"}},
 		},
 	}
@@ -93,7 +93,7 @@ func TestWorktreeLaunch_HooksRunSuccessfully(t *testing.T) {
 // produces a ✗ line and execution continues to subsequent hooks.
 func TestWorktreeLaunch_HookFailurePrintsX(t *testing.T) {
 	cfg := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"myservice": {OnWorktreeLaunch: []string{"false", "echo after"}},
 		},
 	}
@@ -116,7 +116,7 @@ func TestWorktreeLaunch_HookFailurePrintsX(t *testing.T) {
 // in the configured order.
 func TestWorktreeLaunch_MultipleHooksRunInOrder(t *testing.T) {
 	cfg := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"myservice": {OnWorktreeLaunch: []string{"echo first", "echo second"}},
 		},
 	}
@@ -142,7 +142,7 @@ func TestWorktreeLaunch_MultipleHooksRunInOrder(t *testing.T) {
 // from within the hook and checking it appears in the right location.
 func TestWorktreeLaunch_HooksCwdIsWorktreeDir(t *testing.T) {
 	cfg := &WipConfig{
-		Submodules: map[string]SubmoduleConfig{
+		Refs: map[string]RefConfig{
 			"myservice": {OnWorktreeLaunch: []string{"touch sentinel.txt"}},
 		},
 	}

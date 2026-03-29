@@ -3,9 +3,9 @@
 ### Requirement: CLI entry point routes to subcommands
 The CLI SHALL read `os.Args[1]` to determine the top-level subcommand and delegate remaining arguments to the appropriate handler. An unknown or missing subcommand SHALL print usage and exit with a non-zero code.
 
-#### Scenario: Known subcommand is dispatched — submodule
-- **WHEN** the user runs `wip submodule <args>`
-- **THEN** the submodule handler is invoked with the remaining args
+#### Scenario: Known subcommand is dispatched — ref
+- **WHEN** the user runs `wip ref <args>`
+- **THEN** the ref handler is invoked with the remaining args
 
 #### Scenario: Known subcommand is dispatched — worktree
 - **WHEN** the user runs `wip worktree <args>`
@@ -27,5 +27,5 @@ The CLI SHALL read `os.Args[1]` to determine the top-level subcommand and delega
 Each subcommand SHALL define its own `flag.FlagSet` and parse only its portion of `os.Args`. Flags from one subcommand SHALL NOT bleed into another.
 
 #### Scenario: Subcommand flag isolation
-- **WHEN** a flag is defined on `submodule add`
+- **WHEN** a flag is defined on `ref add`
 - **THEN** that flag is not recognized at the top-level or by other subcommands

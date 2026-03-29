@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: .wip.yml is scaffolded at repo root by wip init
 `wip init` SHALL create a `.wip.yml` file at the repository root if one does not already exist. If `.wip.yml` already exists, `wip init` SHALL leave it unchanged.
@@ -48,8 +48,14 @@ Both `wip ref add` and `wip worktree add` SHALL check for the presence of `.wip.
 
 #### Scenario: .wip.yml present
 - **WHEN** the user runs `wip ref add` or `wip worktree add` and `.wip.yml` exists at or above the current directory within the home tree
-- **THEN** the command proceeds past the config check using the discovered project root
+- **THEN** the command proceeds past the config check
 
 #### Scenario: .wip.yml absent
-- **WHEN** the user runs `wip ref add` or `wip worktree add` and no `.wip.yml` exists at or above the current directory within the home tree
-- **THEN** the CLI prints an error indicating `.wip.yml` is missing and suggests running `wip init`, then exits with a non-zero code
+- **WHEN** the user runs `wip ref add` or `wip worktree add` and no `.wip.yml` is found
+- **THEN** the CLI prints an error suggesting `wip init` and exits with a non-zero code
+
+## REMOVED Requirements
+
+### Requirement: Legacy submodules schema key
+**Reason**: The `submodules` top-level key is replaced by `refs` to align with the `wip ref` command family.
+**Migration**: Rename `submodules:` to `refs:` in `.wip.yml`. All nested structure is otherwise unchanged.

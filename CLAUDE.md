@@ -20,24 +20,24 @@ go vet ./...
 
 ## Architecture
 
-`wip` is a Go CLI that provides a high-level interface over `git submodule` and `git worktree` operations for monorepo-style projects.
+`wip` is a Go CLI that provides a high-level interface over git submodule and worktree operations for monorepo-style projects, exposing them as `wip ref` and `wip worktree` commands.
 
-**Entry point:** `main.go` routes on `os.Args[1]` to `cmd.Init()`, `cmd.Submodule()`, or `cmd.Worktree()`.
+**Entry point:** `main.go` routes on `os.Args[1]` to `cmd.Init()`, `cmd.Ref()`, or `cmd.Worktree()`.
 
-**Command pattern:** Each subcommand family has a router file (`cmd/submodule.go`, `cmd/worktree.go`) that owns shared helpers and routes to individual operation files (`submodule_add.go`, `worktree_list.go`, etc.). Each operation owns its own `flag.FlagSet`.
+**Command pattern:** Each subcommand family has a router file (`cmd/ref.go`, `cmd/worktree.go`) that owns shared helpers and routes to individual operation files (`ref_add.go`, `worktree_list.go`, etc.). Each operation owns its own `flag.FlagSet`.
 
 **Git integration:** All git operations are delegated via `os/exec.Command("git", ...)` — stdout/stderr are streamed directly to the user and exit codes are propagated.
 
 **Worktree directory convention:**
 ```
 repo/
-├── <submodule>/        ← actual submodule checkouts
+├── <ref>/          ← ref checkouts (branch-tracking, ignore=all)
 └── worktrees/
-    └── <submodule>/
+    └── <ref>/
         └── <worktree-name>/
 ```
 
-**Concurrency:** `submodule sync` parallelizes updates across submodules using goroutines and `sync.WaitGroup`.
+**Concurrency:** `ref sync` and `ref restore` parallelize updates across refs using goroutines and `sync.WaitGroup`.
 
 ## OpenSpec
 

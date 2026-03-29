@@ -77,7 +77,7 @@ func worktreeList(_ []string) {
 		return pairs[i].worktree < pairs[j].worktree
 	})
 
-	subW, wtW := len("SUBMODULE"), len("WORKTREE")
+	subW, wtW := len("REF"), len("WORKTREE")
 	for _, p := range pairs {
 		if len(p.submodule) > subW {
 			subW = len(p.submodule)
@@ -86,7 +86,7 @@ func worktreeList(_ []string) {
 			wtW = len(p.worktree)
 		}
 	}
-	fmt.Printf("%-*s  %-*s  %s\n", subW, "SUBMODULE", wtW, "WORKTREE", "BRANCH")
+	fmt.Printf("%-*s  %-*s  %s\n", subW, "REF", wtW, "WORKTREE", "BRANCH")
 	for _, p := range pairs {
 		fmt.Printf("%-*s  %-*s  %s\n", subW, p.submodule, wtW, p.worktree, p.branch)
 	}

@@ -12,26 +12,26 @@ Before executing any worktree operation, the CLI SHALL verify the current workin
 - **THEN** the CLI prints an error indicating the directory is not a git repository and exits with a non-zero code
 
 ### Requirement: Submodule name is a required positional argument
-`wip worktree remove` SHALL accept the submodule name as the first positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
+`wip worktree remove` SHALL accept the ref name as the first positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
 
-#### Scenario: Submodule name provided
+#### Scenario: Ref name provided
 - **WHEN** the user runs `wip worktree remove my-lib my-feature`
-- **THEN** the command proceeds with `my-lib` as the submodule name
+- **THEN** the command proceeds with `my-lib` as the ref name
 
-#### Scenario: Submodule name omitted
+#### Scenario: Ref name omitted
 - **WHEN** the user runs `wip worktree remove` with no arguments
 - **THEN** the CLI prints usage and exits with a non-zero code
 
-### Requirement: Submodule must exist
+### Requirement: Ref must exist
 The submodule name SHALL be validated against `.gitmodules`. If the submodule is not registered, the CLI SHALL print an error and exit with a non-zero code.
 
-#### Scenario: Submodule exists
-- **WHEN** the submodule name is registered in `.gitmodules`
-- **THEN** the command proceeds past the submodule existence check
+#### Scenario: Ref exists
+- **WHEN** the ref name is registered in `.gitmodules`
+- **THEN** the command proceeds past the ref existence check
 
-#### Scenario: Submodule does not exist
-- **WHEN** the submodule name is not registered in `.gitmodules`
-- **THEN** the CLI prints an error indicating the submodule was not found and exits with a non-zero code
+#### Scenario: Ref does not exist
+- **WHEN** the ref name is not registered in `.gitmodules`
+- **THEN** the CLI prints an error indicating the ref was not found and exits with a non-zero code
 
 ### Requirement: Worktree name is a required positional argument
 `wip worktree remove` SHALL accept the worktree name as the second positional argument. If absent or empty, the CLI SHALL print usage and exit with a non-zero code.
@@ -60,29 +60,29 @@ The worktree argument is treated as a branch name. The CLI SHALL validate it by 
 - **THEN** the CLI prints a validation error and exits with a non-zero code
 
 ### Requirement: Worktree path is derived from the branch name by replacing slashes
-The worktree directory path SHALL be computed by replacing every `/` character in the branch name with `-`. The CLI SHALL look up and operate on `<repo root>/worktrees/<submodule>/<derived-path>/`.
+The worktree directory path SHALL be computed by replacing every `/` character in the branch name with `-`. The CLI SHALL look up and operate on `<repo root>/worktrees/<ref>/<derived-path>/`.
 
 #### Scenario: Branch name with no slashes
 - **WHEN** the branch name is `my-feature`
-- **THEN** the CLI looks for the worktree at `worktrees/<submodule>/my-feature`
+- **THEN** the CLI looks for the worktree at `worktrees/<ref>/my-feature`
 
 #### Scenario: Branch name with slash
 - **WHEN** the branch name is `feature/my-thing`
-- **THEN** the CLI looks for the worktree at `worktrees/<submodule>/feature-my-thing`
+- **THEN** the CLI looks for the worktree at `worktrees/<ref>/feature-my-thing`
 
 ### Requirement: Worktree path must exist
 The CLI SHALL verify that the derived worktree path exists before invoking git. If the path does not exist, the CLI SHALL print an error and exit with a non-zero code.
 
 #### Scenario: Worktree path exists
-- **WHEN** `worktrees/<submodule>/<worktree>/` exists on the filesystem
+- **WHEN** `worktrees/<ref>/<worktree>/` exists on the filesystem
 - **THEN** the command proceeds to git execution
 
 #### Scenario: Worktree path does not exist
-- **WHEN** `worktrees/<submodule>/<worktree>/` does not exist
+- **WHEN** `worktrees/<ref>/<worktree>/` does not exist
 - **THEN** the CLI prints an error indicating the worktree was not found and exits with a non-zero code
 
 ### Requirement: CLI removes the worktree at the derived path
-The CLI SHALL execute `git worktree remove <abs-derived-path>` with its working directory set to `<repo root>/<submodule>/`. The CLI SHALL stream stdout and stderr to the terminal and exit with git's exit code.
+The CLI SHALL execute `git worktree remove <abs-derived-path>` with its working directory set to `<repo root>/<ref>/`. The CLI SHALL stream stdout and stderr to the terminal and exit with git's exit code.
 
 #### Scenario: Worktree with slash-delimited branch name removed successfully
 - **WHEN** the user runs `wip worktree remove my-lib feature/my-thing`
@@ -109,4 +109,4 @@ When `--delete-branch` is provided, the CLI SHALL execute `git branch -d <branch
 
 #### Scenario: Default behavior preserves the branch
 - **WHEN** `--delete-branch` is not provided
-- **THEN** only the worktree is removed; the branch remains in the submodule repo
+- **THEN** only the worktree is removed; the branch remains in the ref repo

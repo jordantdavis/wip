@@ -61,15 +61,17 @@ func FindWipProject() (*WipProject, error) {
 	return nil, errors.New("no .wip.yml found — run wip init first")
 }
 
-// SubmoduleConfig holds per-submodule configuration from .wip.yml.
-type SubmoduleConfig struct {
+// RefConfig holds per-ref configuration from .wip.yml.
+type RefConfig struct {
+	URL              string   `yaml:"url"`
+	Branch           string   `yaml:"branch"`
 	OnWorktreeCreate []string `yaml:"on-worktree-create"`
 	OnWorktreeLaunch []string `yaml:"on-worktree-launch"`
 }
 
 // WipConfig is the top-level structure for .wip.yml.
 type WipConfig struct {
-	Submodules map[string]SubmoduleConfig `yaml:"submodules"`
+	Refs map[string]RefConfig `yaml:"refs"`
 }
 
 // loadWipConfigFrom reads .wip.yml from the given directory and parses it.

@@ -14,7 +14,7 @@
 - **THEN** an error message is printed to stderr and the command exits with a non-zero code
 
 ### Requirement: wip root uses the same discovery logic as other subcommands
-`wip root` SHALL use the same `findWipProject` function as `wip submodule` and `wip worktree`. It is subject to the same home directory ceiling and outside-home failure behavior.
+`wip root` SHALL use the same `findWipProject` function as `wip ref` and `wip worktree`. It is subject to the same home directory ceiling and outside-home failure behavior.
 
 #### Scenario: Invoked from outside home directory
 - **WHEN** the user runs `wip root` from a directory outside their home directory
