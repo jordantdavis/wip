@@ -103,17 +103,17 @@ wip root
 Add a git ref (external repo) to the workspace. Refs are git submodules configured to always track a branch HEAD and never dirty the parent repo's git status.
 
 ```
-wip ref add [--name <name>] [--branch <branch>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>
+wip ref add [--name <name>] [--branch <branch>] <url>
 ```
 
 | Flag | Description |
 |---|---|
 | `--name` | Ref name and checkout directory. Defaults to the repo name from the URL. |
 | `--branch` | Branch to track. Defaults to `main`. |
-| `--on-worktree-create` | Shell command to run in a new worktree after creation. Repeatable. |
-| `--on-worktree-launch` | Shell command to run when `wip worktree launch` is called for this ref. Repeatable. |
 
 The URL must be one of: `https://`, `http://`, `git://`, or `git@<host>:<path>`.
+
+Hooks are configured in `.wip.yml` directly — see [Configuration](#configuration).
 
 ```bash
 # Basic add
@@ -121,17 +121,6 @@ wip ref add https://github.com/org/backend.git
 
 # Override name and branch
 wip ref add --name api --branch develop https://github.com/org/backend.git
-
-# Register setup hooks (run in each new worktree)
-wip ref add \
-  --on-worktree-create "npm install" \
-  --on-worktree-create "npm run build" \
-  https://github.com/org/frontend.git
-
-# Register launch hooks (run on wip worktree launch)
-wip ref add \
-  --on-worktree-launch "npm run dev" \
-  https://github.com/org/frontend.git
 ```
 
 ---
@@ -309,9 +298,33 @@ refs:
 
 `on-worktree-launch` commands are executed in order inside the worktree directory whenever `wip worktree launch` runs for that ref.
 
-Each command is reported as a success or failure:
+Each command runs via `sh -c`, so shell features like `&&`, pipes, and redirects work as expected. Each command is reported as a success or failure:
 
 ```
 ✓ npm install
 ✓ npm run build
+```
+
+### Hook Environment Variables
+
+The following environment variables are injected into every hook subprocess:
+
+| Variable | Description | Example |
+|---|---|---|
+| `WIP_REF_NAME` | The ref name as defined in `.wip.yml` | `backend` |
+| `WIP_WORKTREE_NAME` | The worktree name as provided by the user | `my-feature` |
+| `WIP_WORKTREE_PATH` | Absolute path to the worktree directory | `/Users/jordan/workspace/worktrees/backend/my-feature` |
+| `WIP_ROOT` | Absolute path to the workspace root | `/Users/jordan/workspace` |
+
+These are available in both `on-worktree-create` and `on-worktree-launch` hooks and are inherited by any subprocesses the hook spawns.
+
+```yaml
+refs:
+  backend:
+    on-worktree-create:
+      - "echo setting up $WIP_WORKTREE_NAME in $WIP_WORKTREE_PATH"
+      - "npm install && npm run build"
+    on-worktree-launch:
+      - "open -n /Applications/Cursor.app --args \"$WIP_WORKTREE_PATH\""
+      - "npm run dev"
 ```

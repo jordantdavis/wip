@@ -36,16 +36,12 @@ func validateName(name string) error {
 func refAdd(args []string) {
 	fs := flag.NewFlagSet("ref add", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: wip ref add [--name <name>] [--branch <branch>] [--on-worktree-create <cmd>] [--on-worktree-launch <cmd>] <url>")
+		fmt.Fprintln(os.Stderr, "usage: wip ref add [--name <name>] [--branch <branch>] <url>")
 		fs.PrintDefaults()
 	}
 
 	name := fs.String("name", "", "ref name and checkout directory at repo root (optional)")
 	branch := fs.String("branch", "main", "branch to track")
-	var onWorktreeCreate stringList
-	var onWorktreeLaunch stringList
-	fs.Var(&onWorktreeCreate, "on-worktree-create", "command to run when worktree created (repeatable)")
-	fs.Var(&onWorktreeLaunch, "on-worktree-launch", "command to run when worktree launched (repeatable)")
 
 	if err := fs.Parse(args); err != nil {
 		os.Exit(1)
@@ -101,12 +97,6 @@ func refAdd(args []string) {
 	refCfg := cfg.Refs[effectiveName]
 	refCfg.URL = url
 	refCfg.Branch = *branch
-	if len(onWorktreeCreate) > 0 {
-		refCfg.OnWorktreeCreate = []string(onWorktreeCreate)
-	}
-	if len(onWorktreeLaunch) > 0 {
-		refCfg.OnWorktreeLaunch = []string(onWorktreeLaunch)
-	}
 	cfg.Refs[effectiveName] = refCfg
 	if err := saveWipConfig(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, "warning: failed to save .wip.yml:", err)

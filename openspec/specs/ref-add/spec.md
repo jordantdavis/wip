@@ -75,42 +75,15 @@ After all validations pass, the CLI SHALL execute `git submodule add -b <branch>
 - **THEN** the CLI exits with the same non-zero code
 
 ### Requirement: wip ref add always writes a ref entry to .wip.yml
-After a successful `git submodule add`, `wip ref add` SHALL always write an entry to `.wip.yml` under `refs.<name>` containing at minimum the `url` and `branch` fields. This ensures `.wip.yml` contains all information needed to restore the ref on a fresh clone without consulting `.gitmodules`.
+After a successful `git submodule add`, `wip ref add` SHALL always write an entry to `.wip.yml` under `refs.<name>` containing the `url` and `branch` fields. This ensures `.wip.yml` contains all information needed to restore the ref on a fresh clone without consulting `.gitmodules`.
 
-#### Scenario: Ref entry written with no hooks
-- **WHEN** the user runs `wip ref add <url>` without any hook flags
+#### Scenario: Ref entry written
+- **WHEN** the user runs `wip ref add <url>`
 - **THEN** `.wip.yml` is updated with a `refs.<name>` entry containing `url` and `branch`
 
-#### Scenario: Ref entry written with hooks
-- **WHEN** the user runs `wip ref add` with hook flags
-- **THEN** `.wip.yml` is updated with a `refs.<name>` entry containing `url`, `branch`, and the provided hooks
+### Requirement: Hooks are not configurable via wip ref add
+`wip ref add` SHALL NOT accept hook flags. Hook commands (`on-worktree-create`, `on-worktree-launch`) are configured by editing `.wip.yml` directly after the ref is added.
 
-### Requirement: --on-worktree-create flag accepts ordered hook commands
-`wip ref add` SHALL accept a repeatable `--on-worktree-create` flag. Each use appends a command string to the list in CLI argument order. When provided, the collected commands SHALL be written to `.wip.yml` under `refs.<name>.on-worktree-create`.
-
-#### Scenario: Single --on-worktree-create command
-- **WHEN** the user runs `wip ref add --on-worktree-create "npm install" <url>`
-- **THEN** `.wip.yml` is updated with `on-worktree-create: ["npm install"]` under the ref entry
-
-#### Scenario: Multiple --on-worktree-create commands preserve order
-- **WHEN** the user runs `wip ref add --on-worktree-create "npm install" --on-worktree-create "cp .env.example .env" <url>`
-- **THEN** `.wip.yml` is updated with `on-worktree-create: ["npm install", "cp .env.example .env"]` in that order
-
-#### Scenario: --on-worktree-create omitted
-- **WHEN** the user runs `wip ref add <url>` without `--on-worktree-create`
-- **THEN** no `on-worktree-create` key is written to the ref entry in `.wip.yml`
-
-### Requirement: --on-worktree-launch flag accepts ordered hook commands
-`wip ref add` SHALL accept a repeatable `--on-worktree-launch` flag. Each use appends a command string to the list in CLI argument order. When provided, the collected commands SHALL be written to `.wip.yml` under `refs.<name>.on-worktree-launch`.
-
-#### Scenario: Single --on-worktree-launch command
-- **WHEN** the user runs `wip ref add --on-worktree-launch "npm run dev" <url>`
-- **THEN** `.wip.yml` is updated with `on-worktree-launch: ["npm run dev"]` under the ref entry
-
-#### Scenario: Multiple --on-worktree-launch commands preserve order
-- **WHEN** the user runs `wip ref add --on-worktree-launch "git pull" --on-worktree-launch "claude" <url>`
-- **THEN** `.wip.yml` is updated with `on-worktree-launch: ["git pull", "claude"]` in that order
-
-#### Scenario: --on-worktree-launch omitted
-- **WHEN** the user runs `wip ref add <url>` without `--on-worktree-launch`
-- **THEN** no `on-worktree-launch` key is written to the ref entry in `.wip.yml`
+#### Scenario: Hooks added after ref registration
+- **WHEN** the user wants to configure hooks for a ref
+- **THEN** they edit `.wip.yml` directly, adding `on-worktree-create` and/or `on-worktree-launch` lists under the ref entry

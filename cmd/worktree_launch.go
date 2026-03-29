@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 func worktreeLaunch(args []string) {
@@ -58,19 +56,5 @@ func worktreeLaunch(args []string) {
 		os.Exit(0)
 	}
 
-	for _, hook := range hooks {
-		parts := strings.Fields(hook)
-		if len(parts) == 0 {
-			continue
-		}
-		hookCmd := exec.Command(parts[0], parts[1:]...)
-		hookCmd.Dir = absWorktreePath
-		hookCmd.Stdout = os.Stdout
-		hookCmd.Stderr = os.Stderr
-		if err := hookCmd.Run(); err != nil {
-			fmt.Fprintf(os.Stdout, "✗ %s\n", hook)
-		} else {
-			fmt.Fprintf(os.Stdout, "✓ %s\n", hook)
-		}
-	}
+	runHooks(submodule, worktree, absWorktreePath, root, hooks)
 }

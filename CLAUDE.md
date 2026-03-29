@@ -39,6 +39,8 @@ repo/
 
 **Concurrency:** `ref sync` and `ref restore` parallelize updates across refs using goroutines and `sync.WaitGroup`.
 
+**Hook execution:** Hooks are run via `runHooks` in `cmd/hooks.go`. Each hook string is executed as `sh -c "<hook>"` (not split with `strings.Fields`), enabling shell features like `&&`, pipes, and redirects. The following env vars are injected into every hook subprocess: `WIP_REF_NAME`, `WIP_WORKTREE_NAME`, `WIP_WORKTREE_PATH`, `WIP_ROOT`. Hooks are configured exclusively in `.wip.yml` — there are no CLI flags for setting hooks.
+
 ## OpenSpec
 
 This project uses OpenSpec for spec-driven development. Specifications live in `openspec/specs/`, and change artifacts (proposals, designs, tasks) live in `openspec/changes/`. Use the `/openspec-propose`, `/openspec-apply-change`, and `/openspec-archive-change` skills to work within this workflow.

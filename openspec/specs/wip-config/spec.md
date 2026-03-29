@@ -43,6 +43,13 @@ All keys SHALL be kebab-case. The `refs` map MAY be empty. The `url` field store
 - **WHEN** `.wip.yml` contains a ref entry with `on-worktree-create` and/or `on-worktree-launch` lists
 - **THEN** both lists are parsed correctly and independently accessible
 
+### Requirement: Hooks are configured exclusively via .wip.yml
+The `on-worktree-create` and `on-worktree-launch` hook lists SHALL only be set by editing `.wip.yml` directly. No CLI command SHALL accept flags for configuring hooks. This ensures hook configuration is always visible in version-controlled config rather than scattered across CLI invocations.
+
+#### Scenario: User adds hooks after wip ref add
+- **WHEN** the user wants to configure hooks for a ref
+- **THEN** they edit `.wip.yml` directly, adding `on-worktree-create` and/or `on-worktree-launch` lists under the ref entry, and those hooks take effect on the next relevant command
+
 ### Requirement: .wip.yml is required for wip ref add and wip worktree add
 Both `wip ref add` and `wip worktree add` SHALL check for the presence of `.wip.yml` before proceeding. If no `.wip.yml` is found within the user's home directory tree, the CLI SHALL print an error directing the user to run `wip init` and exit with a non-zero code.
 
